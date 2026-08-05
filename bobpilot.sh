@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/config.sh"
-source "$SCRIPT_DIR/models.sh"
+BOBPILOT_DIR="/Users/bob/Downloads/BobOpenRouter"
+source "$BOBPILOT_DIR/config.sh"
+source "$BOBPILOT_DIR/models.sh"
 
 _launch(){
 COPILOT_PROVIDER_BASE_URL="$BOBPILOT_PROVIDER_BASE_URL" COPILOT_PROVIDER_TYPE=openai COPILOT_PROVIDER_API_KEY="$OPENROUTER_API_KEY" COPILOT_MODEL="$1" copilot
