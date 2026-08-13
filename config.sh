@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-BOBPILOT_DIR="/Users/bob/Downloads/BobOpenRouter"
+BOBPILOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 set -a
 [ -f "$BOBPILOT_DIR/.env" ] && source "$BOBPILOT_DIR/.env"
 set +a

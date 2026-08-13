@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 MODELS=(
 "🟢 Free|Nemotron 550B|nvidia/nemotron-3-ultra-550b-a55b:free"
+"⚡ Fast|Nemotron 3.5 Lightning|nvidia/nemotron-3.5-lightning:free"
 "🟢 Free|Laguna S 2.1|poolside/laguna-s-2.1:free"
 "🟡 Latest|DeepSeek V4 Flash Latest|deepseek/deepseek-v4-flash-latest"
 "🟠 Fast|GPT OSS 120B|openai/gpt-oss-120b"
