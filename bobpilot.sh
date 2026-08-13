@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-BOBPILOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Determine script directory in both bash and zsh
+if [ -n "$BASH_SOURCE" ]; then
+  SCRIPT_PATH="$BASH_SOURCE"
+else
+  # zsh specific variable to get script filename
+  SCRIPT_PATH="${(%):-%N}"
+fi
+BOBPILOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 source "$BOBPILOT_DIR/config.sh"
 source "$BOBPILOT_DIR/models.sh"
 

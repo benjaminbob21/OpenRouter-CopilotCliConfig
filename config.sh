@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
-BOBPILOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Determine repo root dynamically for Bash and Zsh
+if [ -n "$BASH_SOURCE" ]; then
+  REPO_PATH="$BASH_SOURCE"
+else
+  REPO_PATH="${(%):-%x}"
+fi
+BOBPILOT_DIR="$(cd "$(dirname "$REPO_PATH")" && pwd)"
 set -a
 [ -f "$BOBPILOT_DIR/.env" ] && source "$BOBPILOT_DIR/.env"
 set +a
