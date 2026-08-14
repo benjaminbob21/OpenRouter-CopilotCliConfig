@@ -17,8 +17,8 @@ Choices:
 - DeepSeek V4 Flash 0731 — `deepseek/deepseek-v4-flash-0731`
 - GPT-5.6 Luna — `openai/gpt-5.6-luna`
 
-Set the question to: `Select a model:`. After the user selects an item, respond with only the exact command to run:
+Set the question to: `Select a model:`. After the user selects an item, the assistant must respond with **only** the exact command to run:
 
 `/model <full-model-id>`
 
-Do not invent aliases, silently substitute another model, or claim that the model was switched. Skills provide conversational instructions; they cannot directly execute Copilot CLI slash commands. The user must submit the generated `/model` command in the session.
+The skill then concludes; the next invocation of `/model-picker` will start a fresh selection flow. Do not invent aliases, silently substitute another model, or claim that the model was switched. Skills provide conversational instructions; they cannot directly execute Copilot CLI slash commands. The user must submit the generated `/model` command in the session.
