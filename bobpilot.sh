@@ -11,6 +11,11 @@ source "$BOBPILOT_DIR/config.sh"
 source "$BOBPILOT_DIR/models.sh"
 
 _launch(){
+  if ! command -v copilot >/dev/null 2>&1; then
+    echo "⚠️  GitHub Copilot CLI not found."
+    echo "Install it with:  npm install -g @github/copilot"
+    return 1
+  fi
   local model="$1"
   local provider_model_id="${model%:free}"
   COPILOT_PROVIDER_BASE_URL="$BOBPILOT_PROVIDER_BASE_URL" \
