@@ -17,6 +17,7 @@ Choices:
 - DeepSeek V4 Flash — `deepseek/deepseek-v4-flash`
 - DeepSeek V4 Flash 0731 — `deepseek/deepseek-v4-flash-0731`
 - GPT-5.6 Luna — `openai/gpt-5.6-luna`
+- Free Models Router — `openrouter/free`
 
 Set the question to: `Select a model:`. After the user selects an item, the assistant must respond with **only** the exact command to run:
 
