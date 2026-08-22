@@ -9,6 +9,7 @@ When invoked, use the interactive `ask_user` tool with these choices so the user
 
 Choices:
 - Nemotron 550B — `nvidia/nemotron-3-ultra-550b-a55b:free`
+- OxAlpha — `stealth/ox-alpha`
 - Nemotron 3.5 Lightning — `nvidia/nemotron-3.5-lightning:free`
 - Laguna S 2.1 — `poolside/laguna-s-2.1:free`
 - DeepSeek V4 Flash Latest — `deepseek/deepseek-v4-flash-latest`
