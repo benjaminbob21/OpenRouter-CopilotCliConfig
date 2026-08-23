@@ -59,6 +59,8 @@ _launch(){
 
 bobpilot(){
 case "$1" in
+code) bobpilot-code; return;;
+code-stop) bobpilot-code-stop; return;;
 free) m="${MODELS[0]}";;
 latest) m="${MODELS[2]}";;
 fast) m="${MODELS[3]}";;
