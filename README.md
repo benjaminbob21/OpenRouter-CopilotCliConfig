@@ -57,6 +57,14 @@ OPENROUTER_API_KEY=sk-or-v1-... python3 router.py serve 8317
 ```
 
 Put it behind TLS (caddy/nginx) or an SSH tunnel — it speaks plain HTTP — then
-set `COPILOT_PROVIDER_BASE_URL=http(s)://<host>:8317/v1` on clients. With
+set `COPILOT_PROVIDER_BASE_URL=http(s)://<host>:8317/v1` on clients and
+allow-list that URL in `~/.copilot/settings.json` (`allowedUrls`). With
 `OPENROUTER_API_KEY` set on the proxy, clients need no key. Tune
 `BOBPILOT_ROUTER_PORT`, `BOBPILOT_DISCOVERY_TTL`, `BOBPILOT_MIN_CTX`.
+
+**Local proxy URL allow-list:** Copilot CLI only calls URLs in
+`allowedUrls` (`~/.copilot/settings.json`). Add the router once:
+
+```bash
+copilot /allow-url http://127.0.0.1:8317   # or edit allowedUrls manually
+```
