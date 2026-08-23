@@ -10,6 +10,15 @@ BOBPILOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 source "$BOBPILOT_DIR/config.sh"
 source "$BOBPILOT_DIR/models.sh"
 
+# Launch Copilot with the best coding-ranked free model.
+bobpilot-code(){
+  local id
+  id="$("$BOBPILOT_DIR/coding-model.sh" | head -1)" || return 1
+  echo "🧠 bobpilot code → $id"
+  echo "$id" > "$LAST_MODEL"
+  _launch "$id"
+}
+
 _launch(){
   if ! command -v copilot >/dev/null 2>&1; then
     echo "⚠️  GitHub Copilot CLI not found."
