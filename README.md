@@ -31,13 +31,32 @@ Use:
 - `bobpilot` -> OpenRouter (interactive model picker)
 - `bobpilot code` -> smart coding router
 
-### `bobpilot code`
+### `bobpilot code` — per-request coding router
 
-Launches Copilot with the best free model for coding, chosen dynamically:
-queries OpenRouter's live model list, keeps `:free` models with agentic-grade
-capability (tool calling + structured outputs/vision/reasoning — the same
-feature-matching idea as OpenRouter's `openrouter/free` router), then ranks
-them by a coding preference list instead of picking randomly. The ranking is
-cached for 15 min (`state/coding-model.cache`; tune via
-`BOBPILOT_DISCOVERY_TTL`, minimum context via `BOBPILOT_MIN_CTX`). Edit the
-`PREFERRED` array in `coding-model.sh` as new free models appear.
+Launches Copilot against a tiny local proxy (`router.py`) that routes **every
+request** to the best free model at that moment — the per-request behavior of
+`openrouter/free`, but ranked for coding instead of random:
+
+1. **Discover** — live OpenRouter model list, cached 15 min, self-updating
+2. **Filter** — free + tool-calling + ≥100k context (capability matching)
+3. **Score** — fully automatic from OpenRouter metadata (capability
+   completeness, active parameter count, context, reasoning, code signal,
+   freshness); new free models join the pool on their own, no lists to edit
+
+Only requests with model `bobpilot/code` are rewritten — `/model <id>` for a
+concrete model passes straight through. 429s from free-tier providers are
+retried with backoff. The proxy auto-starts on first `bobpilot code` and can
+be stopped with `bobpilot code-stop`. Logs: `state/router.log`.
+
+**Hosting remotely:** the proxy is stateless (only a local cache file) and
+binds `0.0.0.0`, so it runs on any VM/container with Python 3:
+
+```bash
+BOBPILOT_PROVIDER_BASE_URL=https://openrouter.ai/api/v1 \
+OPENROUTER_API_KEY=sk-or-v1-... python3 router.py serve 8317
+```
+
+Put it behind TLS (caddy/nginx) or an SSH tunnel — it speaks plain HTTP — then
+set `COPILOT_PROVIDER_BASE_URL=http(s)://<host>:8317/v1` on clients. With
+`OPENROUTER_API_KEY` set on the proxy, clients need no key. Tune
+`BOBPILOT_ROUTER_PORT`, `BOBPILOT_DISCOVERY_TTL`, `BOBPILOT_MIN_CTX`.
