@@ -54,6 +54,18 @@ UPSTREAM_TIMEOUT = int(os.environ.get("BOBPILOT_UPSTREAM_TIMEOUT", "300"))
 _code_re = re.compile(r"\b(code|coder|coding|developer|software|agentic)\b", re.I)
 _params_re = re.compile(r"(\d+(?:\.\d+)?)\s*b\b", re.I)
 
+# Optional request-body parameters Copilot may send. Free models often don't
+# support many of these, and OpenRouter returns HTTP 404 (not 400) when a model
+# receives a parameter it doesn't support. We strip any of these that the
+# chosen model's own metadata says it doesn't support.
+_OPTIONAL_PARAMS = {
+    "temperature", "top_p", "top_k", "top_a", "min_p",
+    "frequency_penalty", "presence_penalty", "repetition_penalty",
+    "logit_bias", "logprobs", "seed", "stop", "n", "nprobs",
+    "response_format", "structured_outputs", "reasoning_effort",
+    "max_completion_tokens", "max_tokens", "stream_options",
+}
+
 _lock = threading.Lock()
 
 
@@ -148,13 +160,15 @@ def score(m):
     return s
 
 
-def ranked():
+def ranked(exclude=None):
     cands = [m for m in fetch_models() if eligible(m)]
+    if exclude:
+        cands = [m for m in cands if m["id"] not in exclude]
     return [m["id"] for m in sorted(cands, key=score, reverse=True)]
 
 
-def pick():
-    r = ranked()
+def pick(exclude=None):
+    r = ranked(exclude)
     if not r:
         raise RuntimeError("no eligible free coding models found")
     return r[0]
@@ -176,7 +190,14 @@ class ProxyHandler(BaseHTTPRequestHandler):
         pass
 
     def _upstream(self, method, body=None):
-        url = OPENROUTER_BASE + self.path
+        # Clients point at http://<host>:<port>/v1/..., so self.path already
+        # includes the /v1 prefix. OPENROUTER_BASE also ends in /v1, so joining
+        # them naively would produce a double /v1 and a 404. Strip a leading
+        # /v1 from the path when the base already carries it.
+        path = self.path
+        if OPENROUTER_BASE.rstrip("/").endswith("/v1") and path.startswith("/v1"):
+            path = path[len("/v1"):]
+        url = OPENROUTER_BASE + path
         req = urllib.request.Request(url, data=body, method=method)
         for h in ("Content-Type", "Accept", "Authorization", "X-Title",
                   "HTTP-Referer", "X-OpenRouter-Metadata"):
@@ -197,19 +218,42 @@ class ProxyHandler(BaseHTTPRequestHandler):
         return urllib.request.urlopen(req, timeout=UPSTREAM_TIMEOUT, context=ctx)
 
     def _rewrite_body(self):
+        """Read the request body and, if it targets the router pseudo-model,
+        rewrite it to a concrete free model. Returns (payload, is_routed) or
+        (None, False) when there is no body to rewrite."""
         if not self.headers.get("Content-Length"):
-            return None
+            return None, False
         raw = self.rfile.read(int(self.headers["Content-Length"]))
         try:
             payload = json.loads(raw)
             if isinstance(payload, dict) and payload.get("model") == ROUTER_ID:
-                chosen = pick()
-                payload["model"] = chosen
-                _log(f"{ROUTER_ID} -> {chosen}")
-                raw = json.dumps(payload).encode()
+                return payload, True
         except Exception as e:
-            _log(f"rewrite skipped ({e}); passing body through unchanged")
-        return raw
+            _log(f"rewrite failed ({e}); passing body through unchanged")
+        return raw, False
+
+    def _strip_unsupported(self, payload, model_id):
+        """Drop optional params the chosen model doesn't support.
+
+        OpenRouter returns HTTP 404 (not 400) when a model receives a parameter
+        it doesn't support, so free models fail with a confusing "model not
+        found" error. We only strip params the model's own metadata says it
+        lacks, and never touch required fields (model, messages, stream, tools).
+        """
+        try:
+            supported = set()
+            for m in fetch_models():
+                if m["id"] == model_id:
+                    supported = set(m.get("supported_parameters", []))
+                    break
+            if not supported:
+                return
+            for key in _OPTIONAL_PARAMS:
+                if key in payload and key not in supported:
+                    _log(f"stripped unsupported param '{key}' for {model_id}")
+                    del payload[key]
+        except Exception as e:
+            _log(f"param strip skipped ({e})")
 
     def do_GET(self):
         if self.path == "/health":
@@ -223,19 +267,39 @@ class ProxyHandler(BaseHTTPRequestHandler):
         self._forward(None)
 
     def do_POST(self):
-        self._forward(self._rewrite_body())
+        body, routed = self._rewrite_body()
+        self._forward(body, routed)
 
-    def _forward(self, body):
+    def _forward(self, body, routed=False):
         method = "POST" if body is not None or self.command == "POST" else "GET"
         last_err = None
+        tried = set()
         for attempt in range(3):
+            if routed:
+                # Pick a fresh model each attempt, excluding ones that already
+                # failed, so a temporarily-unavailable free model (OpenRouter
+                # returns 404 "model not found" when a free model has no
+                # currently-available providers) falls over to the next best.
+                chosen = pick(exclude=tried)
+                body["model"] = chosen
+                tried.add(chosen)
+                _log(f"{ROUTER_ID} -> {chosen}")
+                self._strip_unsupported(body, chosen)
+                wire = json.dumps(body).encode()
+            else:
+                wire = body
             try:
-                up = self._upstream(method, body)
+                up = self._upstream(method, wire)
                 break
             except Exception as e:
-                # Free-tier rate limits (HTTP 429) are common; retry the same
-                # request after a short backoff before giving up.
+                # Free-tier rate limits (HTTP 429) and temporary unavailability
+                # (HTTP 404) are common; retry with a different model before
+                # giving up.
                 status = getattr(getattr(e, "__cause__", None), "code", None) or getattr(e, "code", None)
+                if routed and status in (404, 429) and attempt < 2:
+                    _log(f"upstream {status} for {chosen}, trying next model")
+                    time.sleep(1 * (attempt + 1))
+                    continue
                 if status == 429 and attempt < 2:
                     _log(f"upstream 429, retry {attempt + 1}/2")
                     time.sleep(5 * (attempt + 1))

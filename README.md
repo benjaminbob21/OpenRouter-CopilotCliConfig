@@ -44,7 +44,10 @@ request** to the best free model at that moment — the per-request behavior of
    freshness); new free models join the pool on their own, no lists to edit
 
 Only requests with model `bobpilot/code` are rewritten — `/model <id>` for a
-concrete model passes straight through. 429s from free-tier providers are
+concrete model passes straight through. Use the complete OpenRouter ID,
+including a `:free` suffix where present (for example,
+`/model nvidia/nemotron-3-ultra-550b-a55b:free`). BobPilot preserves these IDs
+exactly for both Copilot and OpenRouter. 429s from free-tier providers are
 retried with backoff. The proxy auto-starts on first `bobpilot code` and can
 be stopped with `bobpilot code-stop`. Logs: `state/router.log`.
 

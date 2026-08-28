@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 MODELS=(
 "🟢 Free|Nemotron 550B|nvidia/nemotron-3-ultra-550b-a55b:free"
-"🟡 Free|OxAlpha|stealth/ox-alpha"
+"🟢 Free|Nemotron Super 120B|nvidia/nemotron-3-super-120b-a12b:free"
 "⚡ Fast|Nemotron 3.5 Lightning|nvidia/nemotron-3.5-lightning:free"
 "🟢 Free|Laguna S 2.1|poolside/laguna-s-2.1:free"
-"🟡 Latest|DeepSeek V4 Flash Latest|deepseek/deepseek-v4-flash-latest"
+"🟡 Latest|DeepSeek V4 Flash Latest|~deepseek/deepseek-v4-flash-latest"
+"🟠 Fast|GLM 5.3 Flash|z-ai/glm-5.3-flash"
 "🟠 Fast|GPT OSS 120B|openai/gpt-oss-120b"
 "🔵 Smart|DeepSeek V4 Flash|deepseek/deepseek-v4-flash"
 "🔵 Stable|DeepSeek V4 Flash 0731|deepseek/deepseek-v4-flash-0731"

@@ -47,13 +47,32 @@ _launch(){
     return 1
   fi
   local model="$1"
-  local provider_model_id="${model%:free}"
+  # OpenRouter model IDs are opaque strings; the :free suffix is part of the ID.
+  # COPILOT_MODEL initializes both values without pinning the wire model. This
+  # lets Copilot's /model command update the provider model mid-session.
+  #
+  # A persisted "model" field in ~/.copilot/settings.json OVERRIDES COPILOT_MODEL,
+  # so every launch would silently use that stale model instead of the one picked
+  # here. Clear it so the launch pick (COPILOT_MODEL) actually takes effect.
+  if [ -f "$HOME/.copilot/settings.json" ]; then
+    python3 - "$HOME/.copilot/settings.json" <<'PY'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as f:
+        cfg = json.load(f)
+except Exception:
+    cfg = {}
+if cfg.get("model"):
+    cfg.pop("model", None)
+    with open(p, "w") as f:
+        json.dump(cfg, f, indent=2)
+PY
+  fi
   COPILOT_PROVIDER_BASE_URL="$BOBPILOT_PROVIDER_BASE_URL" \
   COPILOT_PROVIDER_TYPE=openai \
   COPILOT_PROVIDER_API_KEY="$OPENROUTER_API_KEY" \
   COPILOT_MODEL="$model" \
-  COPILOT_PROVIDER_MODEL_ID="$provider_model_id" \
-  COPILOT_PROVIDER_WIRE_MODEL="$model" \
   copilot
 }
 
@@ -62,11 +81,11 @@ case "$1" in
 code) bobpilot-code; return;;
 code-stop) bobpilot-code-stop; return;;
 free) m="${MODELS[0]}";;
-latest) m="${MODELS[2]}";;
-fast) m="${MODELS[3]}";;
-smart) m="${MODELS[4]}";;
-stable) m="${MODELS[5]}";;
-premium) m="${MODELS[6]}";;
+latest) m="${MODELS[4]}";;
+fast) m="${MODELS[2]}";;
+smart) m="${MODELS[6]}";;
+stable) m="${MODELS[7]}";;
+premium) m="${MODELS[8]}";;
 last)
  [ -f "$LAST_MODEL" ] && _launch "$(cat "$LAST_MODEL")"
  return;;
@@ -84,7 +103,16 @@ models)
  if [ -z "$c" ]; then
    if [ -f "$LAST_MODEL" ]; then model=$(cat "$LAST_MODEL"); else model="$DEFAULT_MODEL"; fi
  else
-   IFS="|" read -r _ _ model <<< "${MODELS[$((c))]}"
+   if ! [[ "$c" =~ ^[0-9]+$ ]] || [ "$c" -lt 1 ] || [ "$c" -gt "${#MODELS[@]}" ]; then
+     echo "✗ Invalid choice: $c"
+     return 1
+   fi
+   if [ -n "$BASH_VERSION" ]; then
+     IFS="|" read -r _ _ model <<< "${MODELS[$((c - 1))]}"
+   else
+     # Zsh arrays are one-based; Bash arrays are zero-based.
+     IFS="|" read -r _ _ model <<< "${MODELS[$c]}"
+   fi
  fi
  echo "$model" > "$LAST_MODEL"
  _launch "$model"

@@ -9,10 +9,11 @@ When invoked, use the interactive `ask_user` tool with these choices so the user
 
 Choices:
 - Nemotron 550B — `nvidia/nemotron-3-ultra-550b-a55b:free`
-- OxAlpha — `stealth/ox-alpha`
+- Nemotron Super 120B — `nvidia/nemotron-3-super-120b-a12b:free`
 - Nemotron 3.5 Lightning — `nvidia/nemotron-3.5-lightning:free`
 - Laguna S 2.1 — `poolside/laguna-s-2.1:free`
-- DeepSeek V4 Flash Latest — `deepseek/deepseek-v4-flash-latest`
+- DeepSeek V4 Flash Latest — `~deepseek/deepseek-v4-flash-latest`
+- GLM 5.3 Flash — `z-ai/glm-5.3-flash`
 - GPT OSS 120B — `openai/gpt-oss-120b`
 - DeepSeek V4 Flash — `deepseek/deepseek-v4-flash`
 - DeepSeek V4 Flash 0731 — `deepseek/deepseek-v4-flash-0731`
@@ -21,6 +22,6 @@ Choices:
 
 Set the question to: `Select a model:`. After the user selects an item, the assistant must respond with **only** the exact command to run:
 
-`/model <full-model-id>`
+`/settings model <full-model-id>`
 
 The skill then concludes; the next invocation of `/model-picker` will start a fresh selection flow. Do not invent aliases, silently substitute another model, or claim that the model was switched. Skills provide conversational instructions; they cannot directly execute Copilot CLI slash commands. The user must submit the generated `/model` command in the session.
