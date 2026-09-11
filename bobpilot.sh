@@ -10,36 +10,7 @@ BOBPILOT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 source "$BOBPILOT_DIR/config.sh"
 source "$BOBPILOT_DIR/models.sh"
 
-# Launch Copilot with per-request smart coding routing.
-bobpilot-code(){
-  local port="${BOBPILOT_ROUTER_PORT:-8317}"
-  if ! curl -sf "http://127.0.0.1:$port/health" >/dev/null 2>&1; then
-    echo "🧠 starting coding router on :$port ..."
-    ( nohup python3 "$BOBPILOT_DIR/router.py" serve "$port" \
-        >>"$BOBPILOT_STATE/router.log" 2>&1 & )
-    local i
-    for i in {1..10}; do
-      curl -sf "http://127.0.0.1:$port/health" >/dev/null 2>&1 && break
-      sleep 0.5
-    done
-    curl -sf "http://127.0.0.1:$port/health" >/dev/null 2>&1 \
-      || { echo "✗ router failed to start; see state/router.log"; return 1; }
-  fi
-  echo "🧠 bobpilot code → bobpilot/code (routed per request)"
-  echo "bobpilot/code" > "$LAST_MODEL"
-  COPILOT_PROVIDER_BASE_URL="http://127.0.0.1:$port/v1" _launch "bobpilot/code"
-}
-
-bobpilot-code-stop(){
-  local port="${BOBPILOT_ROUTER_PORT:-8317}"
-  if [ -f "$BOBPILOT_STATE/router.pid" ]; then
-    kill "$(cat "$BOBPILOT_STATE/router.pid")" 2>/dev/null && echo "router stopped"
-  else
-    echo "no router pid file"
-  fi
-  rm -f "$BOBPILOT_STATE/router.pid"
-}
-
+# Launch Copilot with the selected model.
 _launch(){
   if ! command -v copilot >/dev/null 2>&1; then
     echo "⚠️  GitHub Copilot CLI not found."
@@ -78,8 +49,6 @@ PY
 
 bobpilot(){
 case "$1" in
-code) bobpilot-code; return;;
-code-stop) bobpilot-code-stop; return;;
 free) m="${MODELS[0]}";;
 latest) m="${MODELS[4]}";;
 fast) m="${MODELS[2]}";;

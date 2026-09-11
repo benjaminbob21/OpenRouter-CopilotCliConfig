@@ -68,8 +68,10 @@ fi
 
 grep -F "$LINE" ~/.zshrc >/dev/null 2>&1 || echo "$LINE" >> ~/.zshrc
 
-SKILL_DIR="$HOME/.copilot/skills/model-picker"
-mkdir -p "$SKILL_DIR"
-cp "$ROOT/skills/model-picker/SKILL.md" "$SKILL_DIR/SKILL.md"
+for skill in model-picker value-leaders; do
+  SKILL_DIR="$HOME/.copilot/skills/$skill"
+  mkdir -p "$SKILL_DIR"
+  cp "$ROOT/skills/$skill/SKILL.md" "$SKILL_DIR/SKILL.md"
+done
 
-echo "Installed BobPilot and model-picker skill. Restart terminal or run: source ~/.zshrc"
+echo "Installed BobPilot and skills (model-picker, value-leaders). Restart terminal or run: source ~/.zshrc"
